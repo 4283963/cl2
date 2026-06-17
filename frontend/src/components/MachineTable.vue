@@ -10,11 +10,10 @@
           <tr>
             <th>排名</th>
             <th>农机名称</th>
-            <th>农机ID</th>
             <th>作业类型</th>
             <th>今日面积(亩)</th>
             <th>状态</th>
-            <th>更新时间</th>
+            <th>操作</th>
           </tr>
         </thead>
         <tbody>
@@ -24,7 +23,6 @@
               <span :class="['rank-badge', `rank-${index + 1}`]">{{ index + 1 }}</span>
             </td>
             <td class="name-cell">{{ m.machineName }}</td>
-            <td class="id-cell">{{ m.machineId }}</td>
             <td>
               <span :class="['work-type-tag', `type-${(m.currentWorkType || '').toLowerCase()}`]">
                 {{ workTypeLabels[m.currentWorkType] || m.currentWorkType || '--' }}
@@ -35,10 +33,19 @@
               <span :class="['status-dot', m.status === 'ONLINE' ? 'online' : 'offline']"></span>
               {{ m.status === 'ONLINE' ? '在线' : '离线' }}
             </td>
-            <td class="time-cell">{{ m.updatedAt || '--' }}</td>
+            <td>
+              <button class="action-btn" @click="$emit('view-stats', m)">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="12" width="4" height="9"/>
+                  <rect x="10" y="6" width="4" height="15"/>
+                  <rect x="17" y="3" width="4" height="18"/>
+                </svg>
+                工时
+              </button>
+            </td>
           </tr>
           <tr v-if="machines.length === 0">
-            <td colspan="7" class="empty-row">暂无农机数据</td>
+            <td colspan="6" class="empty-row">暂无农机数据</td>
           </tr>
         </tbody>
       </table>
@@ -50,6 +57,8 @@
 defineProps({
   machines: { type: Array, default: () => [] }
 })
+
+defineEmits(['view-stats'])
 
 const workTypeLabels = {
   SOWING: '播种',
@@ -217,5 +226,28 @@ tbody tr:hover {
   padding: 40px 0;
   color: rgba(255, 255, 255, 0.3);
   font-size: 14px;
+}
+
+.action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  background: rgba(0, 230, 118, 0.1);
+  border: 1px solid rgba(0, 230, 118, 0.3);
+  border-radius: 4px;
+  color: #00e676;
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.action-btn:hover {
+  background: rgba(0, 230, 118, 0.2);
+  border-color: rgba(0, 230, 118, 0.6);
+}
+
+.action-btn:active {
+  transform: scale(0.95);
 }
 </style>

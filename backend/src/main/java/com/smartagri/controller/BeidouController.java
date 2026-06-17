@@ -1,6 +1,7 @@
 package com.smartagri.controller;
 
 import com.smartagri.dto.ApiResponse;
+import com.smartagri.dto.HourWorkStatsVO;
 import com.smartagri.dto.MachineVO;
 import com.smartagri.dto.TrackDataDTO;
 import com.smartagri.entity.TrackPoint;
@@ -60,6 +61,11 @@ public class BeidouController {
     @GetMapping("/machines/{machineId}/track")
     public ApiResponse<List<TrackPoint>> getTodayTrack(@PathVariable String machineId) {
         return ApiResponse.success(machineService.getTodayTrackPoints(machineId));
+    }
+
+    @GetMapping("/machines/{machineId}/work-stats")
+    public ApiResponse<List<HourWorkStatsVO>> getTodayWorkStats(@PathVariable String machineId) {
+        return ApiResponse.success(machineService.getTodayWorkStats(machineId));
     }
 }
 

@@ -52,16 +52,23 @@
       </section>
 
       <aside class="table-section">
-        <MachineTable :machines="machines" />
+        <MachineTable :machines="machines" @view-stats="openStats" />
       </aside>
     </main>
+
+    <WorkStatsModal
+      :visible="statsModal.visible"
+      :machine-id="statsModal.machineId"
+      :machine-name="statsModal.machineName"
+      @close="statsModal.visible = false" />
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, reactive, computed, onMounted, onUnmounted } from 'vue'
 import MapView from './components/MapView.vue'
 import MachineTable from './components/MachineTable.vue'
+import WorkStatsModal from './components/WorkStatsModal.vue'
 import { fetchMachines, fetchHealth } from './api/machine.js'
 
 const machines = ref([])
@@ -69,6 +76,18 @@ const currentTime = ref('')
 const connectionOk = ref(true)
 const errorBanner = ref('')
 const consecutiveFails = ref(0)
+
+const statsModal = reactive({
+  visible: false,
+  machineId: '',
+  machineName: ''
+})
+
+function openStats(machine) {
+  statsModal.machineId = machine.machineId
+  statsModal.machineName = machine.machineName
+  statsModal.visible = true
+}
 let refreshTimer = null
 let clockTimer = null
 

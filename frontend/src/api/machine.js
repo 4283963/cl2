@@ -46,6 +46,11 @@ export const fetchTrackPoints = withRetry(async function(machineId) {
   return res.data.data
 }, 1, 500)
 
+export const fetchWorkStats = withRetry(async function(machineId) {
+  const res = await api.get(`/machines/${machineId}/work-stats`)
+  return res.data.data
+}, 1, 500)
+
 export const fetchHealth = withRetry(async function() {
   const res = await api.get('/health', { timeout: 3000 })
   return res.data.data

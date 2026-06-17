@@ -2,6 +2,7 @@ package com.smartagri.service;
 
 import com.smartagri.common.StripedLock;
 import com.smartagri.config.RetryOnDeadlock;
+import com.smartagri.dto.HourWorkStatsVO;
 import com.smartagri.dto.MachineVO;
 import com.smartagri.dto.TrackDataDTO;
 import com.smartagri.entity.Machine;
@@ -267,6 +268,47 @@ public class MachineService {
         LocalDateTime startOfDay = LocalDate.now().atStartOfDay();
         LocalDateTime endOfDay = startOfDay.plusDays(1);
         return trackPointRepository.findByMachineIdAndDate(machineId, startOfDay, endOfDay);
+    }
+
+    public List<HourWorkStatsVO> getTodayWorkStats(String machineId) {
+        LocalDateTime startOfDay = LocalDate.now().atStartOfDay();
+        LocalDateTime endOfDay = startOfDay.plusDays(1);
+        List<TrackPoint> points = trackPointRepository
+                .findByMachineIdAndDate(machineId, startOfDay, endOfDay)
+                .stream()
+                .sorted(Comparator.comparing(TrackPoint::getRecordedAt))
+                .collect(Collectors.toList());
+
+        int[] workMinutes = new int[24];
+        int[] idleMinutes = new int[24];
+        final double WORK_SPEED_THRESHOLD = 0.1;
+
+        if (points.size() >= 2) {
+            for (int i = 1; i < points.size(); i++) {
+                TrackPoint prev = points.get(i - 1);
+                TrackPoint curr = points.get(i);
+                long diffMs = java.time.Duration.between(
+                        prev.getRecordedAt(), curr.getRecordedAt()).toMillis();
+                if (diffMs <= 0 || diffMs > 10 * 60 * 1000L) continue;
+
+                double avgSpeed = (prev.getSpeed() + curr.getSpeed()) / 2.0;
+                double minutes = diffMs / 60000.0;
+                int hour = curr.getRecordedAt().getHour();
+
+                if (avgSpeed >= WORK_SPEED_THRESHOLD) {
+                    workMinutes[hour] += (int) Math.round(minutes);
+                } else {
+                    idleMinutes[hour] += (int) Math.round(minutes);
+                }
+            }
+        }
+
+        List<HourWorkStatsVO> result = new ArrayList<>();
+        int currentHour = LocalDateTime.now().getHour();
+        for (int h = 0; h <= currentHour; h++) {
+            result.add(new HourWorkStatsVO(h, workMinutes[h], idleMinutes[h]));
+        }
+        return result;
     }
 
     private double haversine(double lat1, double lng1, double lat2, double lng2) {
