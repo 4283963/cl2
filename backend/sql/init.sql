@@ -38,3 +38,7 @@ VALUES
     ('BD-003', '中联-3号', 3.5, 34.2580, 108.9480, 'PLOWING', 'ONLINE', NOW()),
     ('BD-004', '沃得-4号', 2.8, 34.2750, 108.9700, 'SOWING', 'ONLINE', NOW()),
     ('BD-005', '久保田-5号', 3.2, 34.2600, 108.9550, 'HARVESTING', 'OFFLINE', NOW());
+
+ALTER TABLE machine ADD INDEX IF NOT EXISTS idx_machine_id_status (machine_id, status);
+ALTER TABLE track_point ADD INDEX IF NOT EXISTS idx_machine_recorded (machine_id, recorded_at);
+ALTER TABLE track_point ADD INDEX IF NOT EXISTS idx_recorded_at (recorded_at);

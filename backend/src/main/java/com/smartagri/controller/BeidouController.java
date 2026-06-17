@@ -6,22 +6,43 @@ import com.smartagri.dto.TrackDataDTO;
 import com.smartagri.entity.TrackPoint;
 import com.smartagri.service.MachineService;
 import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api")
-@RequiredArgsConstructor
 public class BeidouController {
+
+    private static final Logger log = LoggerFactory.getLogger(BeidouController.class);
 
     private final MachineService machineService;
 
+    public BeidouController(MachineService machineService) {
+        this.machineService = machineService;
+    }
+
     @PostMapping("/beidou/track")
     public ApiResponse<String> receiveTrackData(@Valid @RequestBody TrackDataDTO dto) {
-        machineService.receiveTrackData(dto);
-        return ApiResponse.success("轨迹数据接收成功");
+        boolean enqueued = machineService.enqueueTrackData(dto);
+        if (enqueued) {
+            return ApiResponse.success("已接收");
+        } else {
+            return ApiResponse.error(503, "系统繁忙,稍后重试");
+        }
+    }
+
+    @GetMapping("/health")
+    public ApiResponse<Map<String, Object>> health() {
+        Map<String, Object> info = new HashMap<>();
+        info.put("status", "UP");
+        info.put("queueSize", machineService.queueSize());
+        info.put("timestamp", System.currentTimeMillis());
+        return ApiResponse.success(info);
     }
 
     @GetMapping("/machines")
@@ -41,3 +62,4 @@ public class BeidouController {
         return ApiResponse.success(machineService.getTodayTrackPoints(machineId));
     }
 }
+

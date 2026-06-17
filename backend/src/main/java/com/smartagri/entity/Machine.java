@@ -1,10 +1,9 @@
 package com.smartagri.entity;
 
 import jakarta.persistence.*;
-import lombok.Data;
+
 import java.time.LocalDateTime;
 
-@Data
 @Entity
 @Table(name = "machine")
 public class Machine {
@@ -53,4 +52,27 @@ public class Machine {
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
     }
+
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+    public String getMachineId() { return machineId; }
+    public void setMachineId(String machineId) { this.machineId = machineId; }
+    public String getMachineName() { return machineName; }
+    public void setMachineName(String machineName) { this.machineName = machineName; }
+    public Double getWorkWidth() { return workWidth; }
+    public void setWorkWidth(Double workWidth) { this.workWidth = workWidth; }
+    public Double getTodayArea() { return todayArea; }
+    public void setTodayArea(Double todayArea) { this.todayArea = todayArea; }
+    public Double getCurrentLat() { return currentLat; }
+    public void setCurrentLat(Double currentLat) { this.currentLat = currentLat; }
+    public Double getCurrentLng() { return currentLng; }
+    public void setCurrentLng(Double currentLng) { this.currentLng = currentLng; }
+    public String getCurrentWorkType() { return currentWorkType; }
+    public void setCurrentWorkType(String currentWorkType) { this.currentWorkType = currentWorkType; }
+    public String getStatus() { return status; }
+    public void setStatus(String status) { this.status = status; }
+    public LocalDateTime getUpdatedAt() { return updatedAt; }
+    public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
+    public LocalDateTime getCreatedAt() { return createdAt; }
+    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
 }

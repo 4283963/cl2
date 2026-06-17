@@ -9,6 +9,10 @@
           </svg>
         </div>
         <h1 class="header-title">智慧农业 · 北斗农机管理系统</h1>
+        <div :class="['conn-badge', connectionOk ? 'conn-ok' : 'conn-bad']">
+          <span class="conn-dot"></span>
+          {{ connectionOk ? '连接正常' : '服务异常(显示缓存)' }}
+        </div>
       </div>
       <div class="header-right">
         <div class="stat-item">
@@ -28,11 +32,19 @@
       </div>
     </header>
 
+    <transition name="fade">
+      <div v-if="errorBanner" class="error-banner">
+        <span>⚠ {{ errorBanner }}</span>
+        <button @click="errorBanner = ''">×</button>
+      </div>
+    </transition>
+
     <main class="dash-body">
       <section class="map-section">
         <div class="section-title">
           <span class="title-bar"></span>
           实时位置监控
+          <span v-if="!connectionOk" class="stale-tag">数据可能延迟</span>
         </div>
         <div class="map-wrapper">
           <MapView :machines="machines" />
@@ -50,10 +62,13 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import MapView from './components/MapView.vue'
 import MachineTable from './components/MachineTable.vue'
-import { fetchMachines } from './api/machine.js'
+import { fetchMachines, fetchHealth } from './api/machine.js'
 
 const machines = ref([])
 const currentTime = ref('')
+const connectionOk = ref(true)
+const errorBanner = ref('')
+const consecutiveFails = ref(0)
 let refreshTimer = null
 let clockTimer = null
 
@@ -65,10 +80,30 @@ const totalArea = computed(() => {
 
 async function loadData() {
   try {
-    machines.value = await fetchMachines()
+    const fresh = await fetchMachines()
+    if (Array.isArray(fresh) && fresh.length > 0) {
+      machines.value = fresh
+    }
+    consecutiveFails.value = 0
+    connectionOk.value = true
   } catch (e) {
-    console.error('加载农机数据失败:', e)
+    consecutiveFails.value++
+    if (consecutiveFails.value >= 2) {
+      connectionOk.value = false
+      errorBanner.value = `后端请求连续失败 ${consecutiveFails.value} 次, 地图保留最后一次位置 (${e.message})`
+    }
   }
+}
+
+async function checkHealth() {
+  try {
+    await fetchHealth()
+    if (!connectionOk.value) {
+      connectionOk.value = true
+      errorBanner.value = ''
+      consecutiveFails.value = 0
+    }
+  } catch {}
 }
 
 function updateTime() {
@@ -86,6 +121,7 @@ onMounted(() => {
   loadData()
   updateTime()
   refreshTimer = setInterval(loadData, 5000)
+  setInterval(checkHealth, 3000)
   clockTimer = setInterval(updateTime, 1000)
 })
 
@@ -162,6 +198,51 @@ html, body, #app {
   background-clip: text;
 }
 
+.conn-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 14px;
+  font-size: 12px;
+  border: 1px solid;
+}
+
+.conn-badge.conn-ok {
+  color: #00e676;
+  border-color: rgba(0, 230, 118, 0.4);
+  background: rgba(0, 230, 118, 0.08);
+}
+
+.conn-badge.conn-bad {
+  color: #ff9800;
+  border-color: rgba(255, 152, 0, 0.4);
+  background: rgba(255, 152, 0, 0.08);
+  animation: warn-blink 1.5s ease-in-out infinite;
+}
+
+@keyframes warn-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+.conn-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.conn-ok .conn-dot {
+  background: #00e676;
+  box-shadow: 0 0 8px rgba(0, 230, 118, 0.8);
+}
+
+.conn-bad .conn-dot {
+  background: #ff9800;
+  box-shadow: 0 0 8px rgba(255, 152, 0, 0.8);
+}
+
 .header-right {
   display: flex;
   align-items: center;
@@ -200,6 +281,32 @@ html, body, #app {
   background: rgba(0, 230, 118, 0.2);
 }
 
+.error-banner {
+  background: linear-gradient(90deg, rgba(255, 87, 34, 0.2), rgba(255, 152, 0, 0.1));
+  border-bottom: 1px solid rgba(255, 87, 34, 0.4);
+  padding: 8px 28px;
+  font-size: 13px;
+  color: #ffab91;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.error-banner button {
+  background: none;
+  border: none;
+  color: #ffab91;
+  font-size: 18px;
+  cursor: pointer;
+}
+
+.fade-enter-active, .fade-leave-active {
+  transition: opacity .3s;
+}
+.fade-enter-from, .fade-leave-to {
+  opacity: 0;
+}
+
 .dash-body {
   flex: 1;
   display: flex;
@@ -224,6 +331,16 @@ html, body, #app {
   color: rgba(255, 255, 255, 0.7);
   margin-bottom: 10px;
   letter-spacing: 2px;
+}
+
+.stale-tag {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: rgba(255, 152, 0, 0.15);
+  color: #ffb74d;
+  letter-spacing: 0;
+  margin-left: 6px;
 }
 
 .title-bar {
